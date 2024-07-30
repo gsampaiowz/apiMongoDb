@@ -20,12 +20,5 @@ namespace minimalAPIMongo.Domains
 
         public virtual User? User { get; set; }
 
-        public Dictionary<string, string>? AdditionalAttributes { get; set; }
-
-        public Client()
-        {
-            AdditionalAttributes = new Dictionary<string, string>();
-        }
-
     }
 }

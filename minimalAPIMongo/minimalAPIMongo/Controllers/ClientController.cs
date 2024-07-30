@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using minimalAPIMongo.Domains;
 using minimalAPIMongo.Services;
+using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Bson.Serialization.IdGenerators;
 using MongoDB.Driver;
 
 namespace minimalAPIMongo.Controllers
@@ -63,7 +65,7 @@ namespace minimalAPIMongo.Controllers
                     Name = newClient.User!.Name,
                     Email = newClient.User.Email,
                 };
-                newClient.Id = newClient.User.Id ;
+                newClient.Id = newClient.User.Id;
                 await _client!.InsertOneAsync(newClient);
                 return Ok(newClient);
             }
@@ -80,9 +82,11 @@ namespace minimalAPIMongo.Controllers
             try
             {
                 var client = await _client.Find(x => x.Id == id).FirstOrDefaultAsync();
+                var user = await _user.Find(x => x.Id == id).FirstOrDefaultAsync();
                 if (client is not null)
                 {
                     await _client.DeleteOneAsync(x => x.Id == id);
+                    await _user.DeleteOneAsync(x => x.Id == id);
                     return StatusCode(204, "Sucesso ao deletar.");
                 }
                 return NotFound("Produto não encontrado.");
@@ -100,9 +104,13 @@ namespace minimalAPIMongo.Controllers
             try
             {
                 var client = await _client.Find(x => x.Id == id).FirstOrDefaultAsync();
+                var user = await _user.Find(x => x.Id == id).FirstOrDefaultAsync();
                 if (client is not null)
                 {
+
                     updatedProduct.Id = id;
+                    updatedProduct.User!.Id = id;
+                    await _user.ReplaceOneAsync(x => x.Id == id, updatedProduct.User!);
                     await _client.ReplaceOneAsync(x => x.Id == id, updatedProduct);
                     return Ok(updatedProduct);
                 }

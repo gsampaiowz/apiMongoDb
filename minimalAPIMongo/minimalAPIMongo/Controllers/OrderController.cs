@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using minimalAPIMongo.Domains;
 using minimalAPIMongo.Services;
+using minimalAPIMongo.ViewModels;
 using MongoDB.Driver;
 
 namespace minimalAPIMongo.Controllers
@@ -13,11 +13,13 @@ namespace minimalAPIMongo.Controllers
     {
         private readonly IMongoCollection<Order>? _order;
         private readonly IMongoCollection<Product>? _product;
+        private readonly IMongoCollection<Client>? _client;
 
         public OrderController(MongoDbService mongoDbService)
         {
             _order = mongoDbService.GetDatabase.GetCollection<Order>("order");
             _product = mongoDbService.GetDatabase.GetCollection<Product>("product");
+            _client = mongoDbService.GetDatabase.GetCollection<Client>("client");
         }
 
         [HttpGet]
@@ -42,6 +44,15 @@ namespace minimalAPIMongo.Controllers
                 //var order = await _order.Find(Builders<Order>.Filter.Eq(p => p.Id, id)).FirstOrDefaultAsync();
                 var order = await _order.Find(x => x.Id == id).FirstOrDefaultAsync();
 
+                order.Client = _client.Find(x => x.Id == order.ClientId).FirstOrDefaultAsync().Result;
+
+                order.Products = new List<Product>();
+                order.ProductsIds!.ForEach(pId =>
+                {
+                    var p = _product.Find(x => x.Id == pId).FirstOrDefaultAsync().Result;
+                    order.Products!.Add(p);
+                });
+
                 return order is not null ? Ok(order) : NotFound("Produto não encontrado.");
             }
             catch (Exception e)
@@ -52,12 +63,19 @@ namespace minimalAPIMongo.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Order>> Post(Order newProduct)
+        public async Task<ActionResult<Order>> Post(OrderViewModel newOrderModel)
         {
             try
             {
-                await _order!.InsertOneAsync(newProduct);
-                return Ok(newProduct);
+                Order newOrder = new Order
+                {
+                    ClientId = newOrderModel.ClientId,
+                    ProductsIds = newOrderModel.ProductsIds,
+                    Status = newOrderModel.Status,
+                    Date = newOrderModel.Date,
+                };
+                await _order!.InsertOneAsync(newOrder);
+                return Ok(newOrder);
             }
             catch (Exception e)
             {
@@ -87,16 +105,16 @@ namespace minimalAPIMongo.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<Order>> Update(string id, Order updatedProduct)
+        public async Task<ActionResult<Order>> Update(string id, Order updatedOrder)
         {
             try
             {
                 var order = await _order.Find(x => x.Id == id).FirstOrDefaultAsync();
                 if (order is not null)
                 {
-                    updatedProduct.Id = id;
-                    await _order.ReplaceOneAsync(x => x.Id == id, updatedProduct);
-                    return Ok(updatedProduct);
+                    updatedOrder.Id = id;
+                    await _order.ReplaceOneAsync(x => x.Id == id, updatedOrder);
+                    return Ok(updatedOrder);
                 }
                 return NotFound("Produto não encontrado");
 

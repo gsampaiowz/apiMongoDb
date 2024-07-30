@@ -1,5 +1,6 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using System.Text.Json.Serialization;
 
 namespace minimalAPIMongo.Domains
 {
@@ -12,9 +13,11 @@ namespace minimalAPIMongo.Domains
         public DateOnly Date { get; set; }
         [BsonElement("status")]
         public int Status { get; set; }
-        [BsonElement("products")]
-        public virtual List<string>? ProductIds { get; set; }
-        [BsonElement("clientid")]
+        [BsonElement("productsIds")]
+        public List<string>? ProductsIds { get; set; }
+        public List<Product>? Products { get; set; }
+        [BsonElement("clientId")]
         public string? ClientId { get; set; }
+        public Client? Client { get; set; }
     }
 }
