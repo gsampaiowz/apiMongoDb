@@ -46,6 +46,12 @@ namespace minimalAPIMongo.Controllers
 
                 order.Client = _client.Find(x => x.Id == order.ClientId).FirstOrDefaultAsync().Result;
 
+                //if(order.ProductsIds != null)
+                //{
+                //    var filter = Builders<Product>.Filter.In(p => p.Id, order.ProductsIds);
+                //    order.Products = await _product.Find(filter).ToListAsync();
+                //}
+
                 order.Products = new List<Product>();
                 order.ProductsIds!.ForEach(pId =>
                 {
